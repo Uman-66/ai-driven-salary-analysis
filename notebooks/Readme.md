@@ -178,3 +178,153 @@ project_root/
 ---
 
 *End of Phase 3 — Data Prepared for Modeling.*
+## Phase 4: Exploratory Data Analysis (EDA)
+
+### Objective
+
+The goal of Phase 4 was to perform an in-depth exploratory data analysis to understand patterns, trends, and relationships within the cleaned and feature-engineered dataset. This step transforms data from raw numbers into meaningful insights that guide future modeling decisions.
+
+### Steps Performed
+
+#### 1. Automated EDA Report
+
+* Used `ydata-profiling` to automatically generate a comprehensive EDA report.
+* The report includes:
+
+  * Data type summary
+  * Missing value overview
+  * Correlation heatmaps
+  * Feature distributions
+  * Outlier detection
+* Exported the report as an HTML file to `/reports/eda_report.html`.
+
+#### 2. Manual EDA and Visualization
+
+* Conducted focused analyses to explore specific relationships.
+* Key plots and analyses performed:
+
+  * **Salary Distribution:** Visualized salary spread and central tendency.
+  * **Experience Level vs Salary:** Analyzed how experience affects salary growth.
+  * **Country-wise Salary Comparison:** Highlighted top-paying regions.
+  * **Remote Ratio Impact:** Compared remote, hybrid, and on-site salaries.
+  * **AI-related Roles:** Checked salary differences between AI-focused and other tech roles.
+  * **Economic Indicators:** Studied the influence of GDP and Cost of Living on salary levels.
+
+#### 3. Insights Derived
+
+* **AI-skilled developers** consistently earn more than non-AI roles.
+* **Remote work** correlates with slightly higher salaries, especially in developed economies.
+* **Experience level** remains the strongest determinant of compensation.
+* **Cost of living and GDP** both show moderate correlation with salary but vary by region.
+
+#### 4. Outputs Generated
+
+* Visual plots stored in `/visuals/` directory.
+* Full automated EDA report saved in `/reports/eda_report.html`.
+* Summary of insights included within the Jupyter notebook for documentation.
+
+### Tools and Libraries Used
+
+* `pandas`, `numpy` for data manipulation.
+* `matplotlib`, `seaborn`, `plotly` for visualization.
+* `ydata-profiling` for automated EDA.
+
+
+## 🚀 Phase 5 — SQL Integration & Data Exploration
+
+In this phase, we connected our cleaned and feature-engineered salary dataset to an **SQLite database** for structured querying and analysis within the same Jupyter Notebook.
+
+This allows us to use the power of **SQL queries** alongside Python’s **pandas** for data exploration, insights extraction, and validation.
+
+---
+
+### 🧩 Objectives
+
+* Load processed data (`engineered_salary_data.csv` and `model_ready_salary_data.csv`) into an SQLite database.
+* Execute SQL queries directly within the notebook to explore relationships and patterns.
+* Compare salary distributions, experience levels, and company attributes using SQL aggregate functions.
+* Learn how categorical encoding affects query structure.
+
+---
+
+### ⚙️ Steps Performed
+
+#### 1. **Setup SQLite Connection**
+
+We used the built-in `sqlite3` library to create a connection and cursor:
+
+```python
+import sqlite3
+conn = sqlite3.connect("data/salary_analysis.db")
+```
+
+#### 2. **Load Data into Database**
+
+We uploaded both datasets to separate SQL tables for flexibility:
+
+```python
+import pandas as pd
+
+df_eng = pd.read_csv("data/processed/engineered_salary_data.csv")
+df_final = pd.read_csv("data/processed/model_ready_salary_data.csv")
+
+df_eng.to_sql("salary_data", conn, if_exists="replace", index=False)
+df_final.to_sql("salary_data_numeric", conn, if_exists="replace", index=False)
+```
+
+---
+
+#### 3. **Run SQL Queries in Python**
+
+Example query using the categorical dataset:
+
+```python
+query = """
+SELECT experience_level, AVG(salary_in_usd) AS avg_salary
+FROM salary_data
+GROUP BY experience_level
+ORDER BY avg_salary DESC;
+"""
+pd.read_sql(query, conn)
+```
+
+If you use the numeric (encoded) dataset instead, you must adapt queries since the `experience_level` column was one-hot encoded:
+
+```python
+query = """
+SELECT 
+    AVG(CASE WHEN experience_level_SE = 1 THEN salary_in_usd END) AS SE_avg,
+    AVG(CASE WHEN experience_level_MI = 1 THEN salary_in_usd END) AS MI_avg,
+    AVG(CASE WHEN experience_level_EN = 1 THEN salary_in_usd END) AS EN_avg,
+    AVG(CASE WHEN experience_level_EX = 1 THEN salary_in_usd END) AS EX_avg
+FROM salary_data_numeric;
+"""
+pd.read_sql(query, conn)
+```
+
+---
+
+#### 4. **Key Learnings**
+
+* SQL provides fast, readable summaries and group analyses.
+* When categorical variables are one-hot encoded, queries must reference new binary column names.
+* Using SQLite within Jupyter bridges the gap between raw Python analysis and database-driven workflows.
+
+---
+
+### 📂 Outputs
+
+* Database file: `data/salary_analysis.db`
+* SQL Tables:
+
+  * `salary_data` → categorical dataset for exploration
+  * `salary_data_numeric` → numeric dataset for modeling
+
+---
+
+### 🧠 Next Phase (Phase 6)
+
+We’ll visualize the SQL-driven insights with **Matplotlib, Seaborn, and Plotly**, transforming query outputs into interactive charts and dashboards.
+
+---
+
